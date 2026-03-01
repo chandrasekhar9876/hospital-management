@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero-card">
+    <div>
+        <p class="eyebrow">Digital Care Platform</p>
+        <h1 class="hero-title">Smart Hospital Management</h1>
+        <p class="hero-text">Book appointments, track treatment status, and manage hospital workflows from a single dashboard.</p>
+        <div class="hero-actions">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login</a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg">Create Account</a>
+            <a href="{{ url_for('nearby_hospitals') }}" class="btn btn-outline-secondary btn-lg">View Nearby Hospitals</a>
+        </div>
+    </div>
+</section>
+
+<section class="panel-card feature-section mt-4">
+    <div class="feature-header">
+        <p class="eyebrow mb-2">Extended Modules</p>
+        <h2 class="feature-title mb-0">Additional Features</h2>
+    </div>
+    <div class="feature-grid">
+        {% for category, items in platform_features.items() %}
+        <article class="feature-card">
+            <h3>{{ category }}</h3>
+            <ul>
+                {% for item in items %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel-card guide-section mt-4">
+    <div class="feature-header">
+        <p class="eyebrow mb-2">Website Guide</p>
+        <h2 class="feature-title mb-0">How This Website Works</h2>
+    </div>
+    <p class="hero-text mb-4">MediCore is role-based. After login, each user sees only the options they are allowed to use.</p>
+
+    <div class="guide-grid mb-4">
+        <article class="feature-card">
+            <h3>Patient Options</h3>
+            <ul>
+                <li><strong>My Visits:</strong> Book appointment by selecting doctor, date, time, and issue.</li>
+                <li><strong>Patient Portal:</strong> View EHR, lab reports, payments, and telemedicine links.</li>
+                <li><strong>Medical Chatbot:</strong> Ask symptom guidance and then book quickly.</li>
+            </ul>
+        </article>
+        <article class="feature-card">
+            <h3>Doctor Options</h3>
+            <ul>
+                <li><strong>My Appointments:</strong> See which patient is coming on which date/time and update status.</li>
+                <li><strong>Doctor Tools:</strong> Add EHR, lab results, pharmacy stock, and telemedicine sessions.</li>
+                <li><strong>Schedule View:</strong> Check upcoming patient list with issue details.</li>
+            </ul>
+        </article>
+        <article class="feature-card">
+            <h3>Admin Options</h3>
+            <ul>
+                <li><strong>Dashboard:</strong> Monitor all appointments, doctors, patients, and statuses.</li>
+                <li><strong>Operations:</strong> Manage billing, inventory, pharmacy alerts, and staff shifts.</li>
+                <li><strong>Full Schedule:</strong> Track doctor schedule and patient appointment schedule in one place.</li>
+            </ul>
+        </article>
+    </div>
+
+    <div class="rules-card">
+        <h3>System Rules</h3>
+        <ul>
+            <li>Only <strong>patients</strong> can create appointments and submit payments.</li>
+            <li>Only assigned <strong>doctors</strong> can update their appointments and clinical notes.</li>
+            <li><strong>Admin</strong> can see all schedules, billing entries, inventory, and staff rotation.</li>
+            <li>Appointment booking blocks already occupied doctor slots.</li>
+            <li>Patient payment entries are auto-synced into admin billing records.</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

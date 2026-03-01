@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Administration Operations</h3>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-a">
+            <p>Billing Entries</p>
+            <h2>{{ billing_entries|length }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-b">
+            <p>Supplies</p>
+            <h2>{{ supplies|length }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-c">
+            <p>Schedules</p>
+            <h2>{{ schedules|length }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-d">
+            <p>Low Stock Alerts</p>
+            <h2>{{ low_supplies|length + low_pharmacy|length }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-4">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Billing & Accounting</h5>
+                <form method="POST" action="{{ url_for('admin_add_billing') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Type</label>
+                        <select name="entry_type" class="form-select" required>
+                            <option>Invoice</option>
+                            <option>Insurance Claim</option>
+                            <option>Payroll</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Subject</label>
+                        <input name="subject" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Amount</label>
+                        <input type="number" min="1" step="0.01" name="amount" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Status</label>
+                        <input name="status" class="form-control" value="Open">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100">Add Billing Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Inventory Tracking</h5>
+                <form method="POST" action="{{ url_for('admin_add_supply') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Supply Name</label>
+                        <input name="supply_name" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Category</label>
+                        <input name="category" class="form-control" placeholder="PPE / Oxygen / Consumables" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Unit</label>
+                        <input name="unit" class="form-control" value="units">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" min="0" name="quantity" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Minimum Level</label>
+                        <input type="number" min="0" name="min_level" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100">Save Supply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Staff Scheduling</h5>
+                <form method="POST" action="{{ url_for('admin_add_schedule') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Staff Name</label>
+                        <input name="staff_name" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Role</label>
+                        <input name="staff_role" class="form-control" placeholder="Nurse / Doctor / Technician" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Shift Slot</label>
+                        <select name="shift_slot" class="form-select" required>
+                            <option>Morning</option>
+                            <option>Evening</option>
+                            <option>Night</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Shift Date</label>
+                        <input type="date" name="shift_date" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <input name="notes" class="form-control" placeholder="Ward / OT / ER">
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100">Add Shift</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Billing Register</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in billing_entries %}
+                    <tr>
+                        <td>{{ b.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ b.entry_type }}</td>
+                        <td>{{ b.subject }}</td>
+                        <td>{{ b.status }}</td>
+                        <td>INR {{ '%.2f'|format(b.amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No billing entries yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Patient Payments (Auto Synced)</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Purpose</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pay in patient_payments %}
+                    <tr>
+                        <td>{{ pay.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ pay.patient_name }}</td>
+                        <td>{{ pay.payment_for }}</td>
+                        <td>{{ pay.method }}</td>
+                        <td>{{ pay.status }}</td>
+                        <td>INR {{ '%.2f'|format(pay.amount) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">No patient payments found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Doctor & Patient Appointment Schedule</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Doctor</th>
+                        <th>Hospital</th>
+                        <th>Location</th>
+                        <th>Patient</th>
+                        <th>Issue</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in upcoming_appointments %}
+                    <tr>
+                        <td>{{ a.date }}</td>
+                        <td>{{ a.time }}</td>
+                        <td>Dr. {{ a.doctor_name }}</td>
+                        <td>{{ a.hospital_name or '-' }}</td>
+                        <td>{{ a.hospital_location or '-' }}</td>
+                        <td>{{ a.patient_name }}</td>
+                        <td>{{ a.issue or '-' }}</td>
+                        <td><span class="status-pill status-{{ a.status|lower }}">{{ a.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">No upcoming appointments.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Hospital Supplies</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Min</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in supplies %}
+                            <tr>
+                                <td>{{ item.supply_name }}</td>
+                                <td>{{ item.category }}</td>
+                                <td>{{ item.quantity }} {{ item.unit }}</td>
+                                <td>{{ item.min_level }}</td>
+                                <td>
+                                    {% if item.quantity <= item.min_level %}
+                                    <span class="status-pill status-cancelled">Low</span>
+                                    {% else %}
+                                    <span class="status-pill status-completed">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No supply items found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Staff Rotations</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Staff</th>
+                                <th>Role</th>
+                                <th>Shift</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in schedules %}
+                            <tr>
+                                <td>{{ s.shift_date }}</td>
+                                <td>{{ s.staff_name }}</td>
+                                <td>{{ s.staff_role }}</td>
+                                <td>{{ s.shift_slot }}</td>
+                                <td>{{ s.notes or '-' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No schedules found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Pharmacy Alerts</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Stock</th>
+                        <th>Reorder Level</th>
+                        <th>Expiry</th>
+                        <th>Alert</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for med in pharmacy_items %}
+                    <tr>
+                        <td>{{ med.item_name }}</td>
+                        <td>{{ med.stock_qty }}</td>
+                        <td>{{ med.reorder_level }}</td>
+                        <td>{{ med.expiry_date }}</td>
+                        <td>
+                            {% if med in low_pharmacy %}
+                            <span class="status-pill status-cancelled">Reorder/Expiry</span>
+                            {% else %}
+                            <span class="status-pill status-completed">OK</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No pharmacy records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h3 class="mb-0">Nearby Hospitals - {{ selected_city_label }}</h3>
+    <form method="GET" action="{{ url_for('nearby_hospitals') }}" class="d-flex align-items-center gap-2">
+        <label for="citySelect" class="mb-0 fw-semibold">City</label>
+        <select id="citySelect" name="city" class="form-select" onchange="this.form.submit()">
+            {% for city in city_options %}
+                <option value="{{ city.key }}" {% if city.key == selected_city %}selected{% endif %}>{{ city.label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-7">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Hospital Map</h5>
+                <div id="gajuwakaMap" class="hospital-map"></div>
+                <p class="text-muted small mt-2 mb-0">Tip: Click a marker to view hospital details and open in maps.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Hospitals Near {{ selected_city_label }}</h5>
+                <div class="hospital-list">
+                    {% for hospital in hospitals %}
+                    <div class="hospital-item">
+                        <h6 class="mb-1">{{ hospital.name }}</h6>
+                        <p class="mb-1 text-muted">{{ hospital.address }}</p>
+                        <p class="mb-2"><span class="status-pill status-approved">{{ hospital.speciality }}</span></p>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener"
+                               href="https://www.google.com/maps/search/?api=1&query={{ hospital.lat }},{{ hospital.lng }}">
+                               Open in Google Maps
+                            </a>
+                            <a class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"
+                               href="https://www.openstreetmap.org/?mlat={{ hospital.lat }}&mlon={{ hospital.lng }}#map=16/{{ hospital.lat }}/{{ hospital.lng }}">
+                               Open in OSM
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+    const hospitals = {{ hospitals|tojson }};
+    const center = {{ map_center|tojson }};
+
+    const map = L.map('gajuwakaMap').setView([center.lat, center.lng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    hospitals.forEach((hospital) => {
+        const popup = `
+            <strong>${hospital.name}</strong><br>
+            ${hospital.address}<br>
+            <a href="https://www.google.com/maps/search/?api=1&query=${hospital.lat},${hospital.lng}" target="_blank" rel="noopener">Open in Maps</a>
+        `;
+        L.marker([hospital.lat, hospital.lng]).addTo(map).bindPopup(popup);
+    });
+</script>
+{% endblock %}

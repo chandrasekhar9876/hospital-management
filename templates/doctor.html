@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Doctor Dashboard</h3>
+<a href="{{ url_for('doctor_tools') }}" class="btn btn-outline-primary mb-3">Open Doctor & Staff Tools</a>
+<div class="alert alert-info mb-4" role="alert">
+    <strong>Doctor Role:</strong> Review each patient's issue description, update appointment status, and add prescription/clinical notes after consultation.
+</div>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Patient Schedule</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Patient</th>
+                        <th>Hospital</th>
+                        <th>Location</th>
+                        <th>Issue</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in appointments %}
+                    <tr>
+                        <td>{{ a.date }}</td>
+                        <td>{{ a.time }}</td>
+                        <td>{{ a.patient_name }}</td>
+                        <td>{{ a.hospital_name or '-' }}</td>
+                        <td>{{ a.hospital_location or '-' }}</td>
+                        <td>{{ a.issue or '-' }}</td>
+                        <td><span class="status-pill status-{{ a.status|lower }}">{{ a.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No scheduled patients.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for a in appointments %}
+    <div class="col-12 col-lg-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Patient: {{ a.patient_name }}</h5>
+                <p class="mb-2"><strong>When:</strong> {{ a.date }} {{ a.time }}</p>
+                <p class="mb-2"><strong>Hospital:</strong> {{ a.hospital_name or '-' }}</p>
+                <p class="mb-2"><strong>Location:</strong> {{ a.hospital_location or '-' }}</p>
+                <p class="mb-2"><strong>Reported Issue:</strong> {{ a.issue or '-' }}</p>
+                <p class="mb-3"><strong>Current Status:</strong> <span class="status-pill status-{{ a.status|lower }}">{{ a.status }}</span></p>
+
+                <form method="POST" action="{{ url_for('update', id=a.id) }}">
+                    <div class="mb-2">
+                        <label class="form-label">Update Status</label>
+                        <select name="status" class="form-select" required>
+                            <option value="Pending" {% if a.status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Approved" {% if a.status == 'Approved' %}selected{% endif %}>Approved</option>
+                            <option value="Completed" {% if a.status == 'Completed' %}selected{% endif %}>Completed</option>
+                            <option value="Cancelled" {% if a.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Prescription / Notes</label>
+                        <textarea name="prescription" class="form-control" rows="3" placeholder="Add prescription or comments">{{ a.prescription or '' }}</textarea>
+                    </div>
+                    <button class="btn btn-success" type="submit">Save Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="card panel-card">
+            <div class="card-body text-muted">No appointments assigned yet.</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

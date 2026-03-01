@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Doctor & Staff Tools</h3>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Create EHR Record</h5>
+                <form method="POST" action="{{ url_for('doctor_add_record') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Patient</label>
+                        <select name="patient_name" class="form-select" required>
+                            <option value="" disabled selected>Select patient</option>
+                            {% for a in appointments %}
+                            <option value="{{ a.patient_name }}">{{ a.patient_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Diagnosis</label>
+                        <textarea name="diagnosis" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Medications</label>
+                        <textarea name="medications" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" type="submit">Save EHR</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Add Lab Result</h5>
+                <form method="POST" action="{{ url_for('doctor_add_lab_result') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Patient</label>
+                        <select name="patient_name" class="form-select" required>
+                            <option value="" disabled selected>Select patient</option>
+                            {% for a in appointments %}
+                            <option value="{{ a.patient_name }}">{{ a.patient_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Test Name</label>
+                        <input name="test_name" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option>Final</option>
+                            <option>Preliminary</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Result</label>
+                        <input name="result_value" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Normal Range</label>
+                        <input name="normal_range" class="form-control" placeholder="Optional">
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" type="submit">Save Lab Result</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Telemedicine Session</h5>
+                <form method="POST" action="{{ url_for('doctor_create_telemedicine') }}" class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">Appointment</label>
+                        <select name="appointment_id" class="form-select" required>
+                            <option value="" disabled selected>Select appointment</option>
+                            {% for a in appointments %}
+                            <option value="{{ a.id }}">{{ a.patient_name }} | {{ a.date }} {{ a.time }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Room Link (optional)</label>
+                        <input name="room_link" class="form-control" placeholder="Auto-generated if empty">
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" type="submit">Create Session</button>
+                    </div>
+                </form>
+
+                <hr>
+                <h6>Existing Sessions</h6>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Join</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in telemedicine_sessions %}
+                            <tr>
+                                <td>{{ s.patient_name }}</td>
+                                <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('join_telemedicine', session_id=s.id) }}" target="_blank">Open</a></td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted">No sessions yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Pharmacy Management</h5>
+                <form method="POST" action="{{ url_for('doctor_add_pharmacy_item') }}" class="row g-2 mb-3">
+                    <div class="col-12">
+                        <label class="form-label">Medicine Name</label>
+                        <input name="item_name" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Stock</label>
+                        <input type="number" min="0" name="stock_qty" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Reorder Level</label>
+                        <input type="number" min="0" name="reorder_level" class="form-control" required>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Expiry Date</label>
+                        <input type="date" name="expiry_date" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" type="submit">Save Item</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Stock</th>
+                                <th>Reorder</th>
+                                <th>Expiry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in pharmacy_items %}
+                            <tr>
+                                <td>{{ item.item_name }}</td>
+                                <td>{{ item.stock_qty }}</td>
+                                <td>{{ item.reorder_level }}</td>
+                                <td>{{ item.expiry_date }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No pharmacy items available.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card panel-card">
+            <div class="card-body">
+                <h5 class="card-title">Recent EHR & Lab Updates</h5>
+                <div class="row g-3">
+                    <div class="col-12 col-xl-6">
+                        <h6>EHR Records</h6>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Diagnosis</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for r in records %}
+                                    <tr>
+                                        <td>{{ r.patient_name }}</td>
+                                        <td>{{ r.diagnosis }}</td>
+                                        <td>{{ r.created_at.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No records yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-12 col-xl-6">
+                        <h6>Lab Results</h6>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Test</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for lab in lab_results %}
+                                    <tr>
+                                        <td>{{ lab.patient_name }}</td>
+                                        <td>{{ lab.test_name }}</td>
+                                        <td>{{ lab.status }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No lab results yet.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

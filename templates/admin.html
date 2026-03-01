@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Admin Dashboard</h3>
+<a href="{{ url_for('admin_operations') }}" class="btn btn-outline-primary mb-3">Open Administration Operations</a>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-a">
+            <p>Total Appointments</p>
+            <h2>{{ total_appointments }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-b">
+            <p>Total Doctors</p>
+            <h2>{{ total_doctors }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-c">
+            <p>Total Patients</p>
+            <h2>{{ total_patients }}</h2>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="dashboard-card card-d">
+            <p>Completed Cases</p>
+            <h2>{{ status_counts['Completed'] }}</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Appointments in Last 7 Days</h5>
+        <canvas id="appointmentChart" height="90"></canvas>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-xl-5">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Add Doctor</h5>
+                <form method="POST" action="{{ url_for('add_doctor') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Doctor Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Doctor Email</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password (optional)</label>
+                        <input type="text" name="password" class="form-control" placeholder="Default: doctor123">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Doctor</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-7">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Doctors</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doctor in doctors %}
+                            <tr>
+                                <td>Dr. {{ doctor.name }}</td>
+                                <td>{{ doctor.email }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted">No doctors found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card panel-card">
+    <div class="card-body">
+        <h5 class="card-title">Recent Appointments</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Hospital</th>
+                        <th>Location</th>
+                        <th>Date & Time</th>
+                        <th>Issue</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in appointments %}
+                    <tr>
+                        <td>{{ a.patient_name }}</td>
+                        <td>{{ a.doctor_name }}</td>
+                        <td>{{ a.hospital_name or '-' }}</td>
+                        <td>{{ a.hospital_location or '-' }}</td>
+                        <td>{{ a.date }} {{ a.time }}</td>
+                        <td>{{ a.issue or '-' }}</td>
+                        <td><span class="status-pill status-{{ a.status|lower }}">{{ a.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">No appointments yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chartElement = document.getElementById('appointmentChart');
+    if (chartElement) {
+        new Chart(chartElement, {
+            type: 'bar',
+            data: {
+                labels: {{ weekly_labels|tojson }},
+                datasets: [{
+                    label: 'Appointments',
+                    data: {{ weekly_counts|tojson }},
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    backgroundColor: '#1f6feb'
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

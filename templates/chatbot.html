@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Medical AI Chatbot</h3>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-7">
+        <div class="card panel-card h-100">
+            <div class="card-body chatbot-wrap">
+                <p class="text-muted mb-3">Ask health-related questions. This is guidance only and not a replacement for professional diagnosis.</p>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Language</label>
+                        <select id="chatLanguage" class="form-select">
+                            <option value="en" {% if current_lang == 'en' %}selected{% endif %}>English</option>
+                            <option value="hi" {% if current_lang == 'hi' %}selected{% endif %}>Hindi</option>
+                            <option value="te" {% if current_lang == 'te' %}selected{% endif %}>Telugu</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-5 d-flex align-items-end">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="realAiToggle" {% if ai_available %}checked{% endif %} {% if not ai_available %}disabled{% endif %}>
+                            <label class="form-check-label" for="realAiToggle">Real AI Mode</label>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-3 d-flex align-items-end">
+                        <span id="aiStatus" class="small text-muted">{% if ai_available %}AI connected{% else %}AI key not set{% endif %}</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap mb-3">
+                    <button class="btn btn-sm btn-outline-primary quick-msg" data-message="I have fever and cough for 2 days, moderate">Fever + Cough</button>
+                    <button class="btn btn-sm btn-outline-primary quick-msg" data-message="I have headache for 1 week">Headache</button>
+                    <button class="btn btn-sm btn-outline-primary quick-msg" data-message="I have stomach pain and nausea since yesterday">Stomach Issue</button>
+                    <button id="resetChat" class="btn btn-sm btn-outline-secondary" type="button">Reset Chat</button>
+                </div>
+                <div id="chatWindow" class="chat-window"></div>
+
+                <form id="chatForm" class="chat-form mt-3">
+                    <input id="chatInput" type="text" class="form-control" placeholder="Type symptoms or ask for appointment help" required>
+                    <button class="btn btn-primary" type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-5">
+        <div class="card panel-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Quick Appointment</h5>
+                {% if current_user.role == 'patient' %}
+                <form method="POST" action="{{ url_for('book') }}" class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Doctor</label>
+                        <select name="doctor" class="form-select" required>
+                            <option value="" disabled selected>Select doctor</option>
+                            {% for doctor in doctors %}
+                                <option value="{{ doctor.name }}">Dr. {{ doctor.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Hospital Name</label>
+                        <input type="text" name="hospital_name" class="form-control" placeholder="Enter hospital name" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Hospital Location</label>
+                        <input type="text" name="hospital_location" class="form-control" placeholder="Enter hospital location" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Time</label>
+                        <input type="time" name="time" class="form-control" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Describe Your Issue</label>
+                        <textarea name="issue" class="form-control" rows="3" minlength="10" placeholder="Describe your symptoms or health issue..." required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary w-100" type="submit">Book Appointment</button>
+                    </div>
+                </form>
+                {% else %}
+                <p class="text-muted mb-0">Only patient accounts can book appointments. Login as patient to use this section.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatWindow = document.getElementById('chatWindow');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const quickButtons = document.querySelectorAll('.quick-msg');
+    const resetChat = document.getElementById('resetChat');
+    const chatLanguage = document.getElementById('chatLanguage');
+    const realAiToggle = document.getElementById('realAiToggle');
+    const aiStatus = document.getElementById('aiStatus');
+
+    const greetings = {
+        en: 'Hello. I am your medical assistant. Tell me your symptoms or ask me to help with appointments.',
+        hi: 'नमस्ते। मैं आपका मेडिकल असिस्टेंट हूं। अपने लक्षण बताएं या अपॉइंटमेंट के बारे में पूछें।',
+        te: 'నమస్తే. నేను మీ మెడికల్ అసిస్టెంట్. మీ లక్షణాలు చెప్పండి లేదా అపాయింట్మెంట్ సహాయం అడగండి.'
+    };
+
+    function addMessage(content, sender) {
+        const row = document.createElement('div');
+        row.className = `chat-message ${sender}`;
+        row.textContent = content;
+        chatWindow.appendChild(row);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    addMessage(greetings[chatLanguage.value] || greetings.en, 'bot');
+
+    async function sendMessage(message) {
+        if (!message) return;
+
+        addMessage(message, 'user');
+        chatInput.value = '';
+
+        try {
+            const response = await fetch("{{ url_for('chatbot_message') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message,
+                    language: chatLanguage.value,
+                    use_real_ai: !!realAiToggle.checked
+                })
+            });
+            const data = await response.json();
+            addMessage(data.reply || 'I could not process that message.', 'bot');
+            aiStatus.textContent = data.ai_used ? 'Real AI response' : 'Smart local response';
+        } catch (error) {
+            addMessage('Unable to reach chatbot service right now. Please try again.', 'bot');
+        }
+    }
+
+    chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = chatInput.value.trim();
+        await sendMessage(message);
+    });
+
+    quickButtons.forEach((button) => {
+        button.addEventListener('click', async () => {
+            const message = button.dataset.message || '';
+            await sendMessage(message);
+        });
+    });
+
+    resetChat.addEventListener('click', async () => {
+        try {
+            await fetch("{{ url_for('chatbot_reset') }}", { method: 'POST' });
+            chatWindow.innerHTML = '';
+            addMessage(greetings[chatLanguage.value] || greetings.en, 'bot');
+        } catch (error) {
+            addMessage('Could not reset chat right now. Please refresh.', 'bot');
+        }
+    });
+
+    chatLanguage.addEventListener('change', async () => {
+        try {
+            await fetch("{{ url_for('chatbot_reset') }}", { method: 'POST' });
+        } catch (error) {
+            // keep UI usable even if reset call fails
+        }
+        chatWindow.innerHTML = '';
+        addMessage(greetings[chatLanguage.value] || greetings.en, 'bot');
+    });
+</script>
+{% endblock %}

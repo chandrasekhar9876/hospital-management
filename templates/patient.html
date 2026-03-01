@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="mb-4">Patient Dashboard</h3>
+<a href="{{ url_for('patient_portal') }}" class="btn btn-outline-primary mb-3">Open Patient Portal</a>
+
+<div class="card panel-card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Book Appointment</h5>
+        <form method="POST" action="{{ url_for('book') }}" class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Doctor</label>
+                <select name="doctor" id="doctorSelect" class="form-select" required>
+                    <option value="" disabled selected>Select doctor</option>
+                    {% for doctor in doctors %}
+                        <option value="{{ doctor.name }}">Dr. {{ doctor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Hospital Name</label>
+                <input type="text" name="hospital_name" id="hospitalNameInput" class="form-control" placeholder="Enter hospital name" required>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Hospital Location</label>
+                <input type="text" name="hospital_location" id="hospitalLocationInput" class="form-control" placeholder="Enter hospital location" required>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Time</label>
+                <input type="time" name="time" class="form-control" required>
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label">Doctor Profession</label>
+                <input type="text" id="doctorProfessionInput" class="form-control" placeholder="Auto-filled from issue" readonly>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Describe Your Issue</label>
+                <textarea name="issue" id="issueInput" class="form-control" rows="3" minlength="10" placeholder="Describe your symptoms or health issue..." required></textarea>
+            </div>
+            <div class="col-12 col-md-2 d-flex align-items-end">
+                <button class="btn btn-primary w-100" type="submit">Book</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card panel-card">
+    <div class="card-body">
+        <h5 class="card-title">Your Appointments</h5>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Doctor & Hospital</th>
+                        <th>Hospital Location</th>
+                        <th>Date & Time</th>
+                        <th>Issue</th>
+                        <th>Status</th>
+                        <th>Prescription</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in appointments %}
+                    <tr>
+                        <td>Dr. {{ a.doctor_name }}<br><span class="text-muted small">{{ a.hospital_name or '-' }}</span></td>
+                        <td>{{ a.hospital_location or '-' }}</td>
+                        <td>{{ a.date }} {{ a.time }}</td>
+                        <td>{{ a.issue or '-' }}</td>
+                        <td><span class="status-pill status-{{ a.status|lower }}">{{ a.status }}</span></td>
+                        <td>{{ a.prescription or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">You have no appointments.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const issueInput = document.getElementById('issueInput');
+    const doctorSelect = document.getElementById('doctorSelect');
+    const hospitalNameInput = document.getElementById('hospitalNameInput');
+    const hospitalLocationInput = document.getElementById('hospitalLocationInput');
+    const doctorProfessionInput = document.getElementById('doctorProfessionInput');
+
+    if (!issueInput || !doctorSelect || !hospitalNameInput || !hospitalLocationInput || !doctorProfessionInput) {
+        return;
+    }
+
+    let debounceTimer = null;
+    let requestCounter = 0;
+
+    const applyRecommendation = (data) => {
+        if (!data || !data.suggested) {
+            return;
+        }
+        if (data.doctor_name) {
+            doctorSelect.value = data.doctor_name;
+        }
+        if (data.hospital_name) {
+            hospitalNameInput.value = data.hospital_name;
+        }
+        if (data.hospital_location) {
+            hospitalLocationInput.value = data.hospital_location;
+        }
+        if (data.profession) {
+            doctorProfessionInput.value = data.profession;
+        }
+    };
+
+    issueInput.addEventListener('input', () => {
+        const issue = issueInput.value.trim();
+        clearTimeout(debounceTimer);
+
+        if (issue.length < 3) {
+            doctorProfessionInput.value = '';
+            return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+            requestCounter += 1;
+            const currentRequest = requestCounter;
+
+            try {
+                const response = await fetch('{{ url_for("patient_recommendation") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({issue}),
+                });
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                if (currentRequest !== requestCounter) {
+                    return;
+                }
+                applyRecommendation(data);
+            } catch (error) {
+                // Ignore recommendation fetch errors and keep manual form entry available.
+            }
+        }, 500);
+    });
+});
+</script>
+{% endblock %}
